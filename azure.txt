@@ -1,0 +1,50 @@
+
+(from https://towardsdatascience.com/deploying-a-streamlit-web-app-with-azure-app-service-1
+f09a2159743 :)
+
+
+
+
+
+#CREATE A RESOURCE GROUP:
+
+
+
+#CREATE A CONTAINER REGISTRY UNDER THE RESOURCE GROUP
+#BUILD THE DOCKER IMAGE AND SAVE TO AZURE CONTAINER REGISTRY (THIS TAKES A FEW MIN)
+
+az login
+
+az group create -l westeurope -n acqplotterApp
+az acr create --name acqplotterAppRegistry --resource-group acqplotterApp --sku standard --admin-enabled true
+az acr build --registry acqplotterAppRegistry --resource-group acqplotterApp --image acqplotter-app .
+az appservice plan create -g acqplotterApp -n acqplotterAppServicePlan -l westeurope --is-linux --sku B3
+az webapp create -g acqplotterApp -p acqplotterAppServicePlan -n acqplotter-web-app -i acqplotterappregistry.azurecr.io/acqplotter-app:latest
+
+
+
+
+
+#And finally paste this into your browser
+
+#-->  acqplotter-web-app.azurewebsites.net
+
+#then wait for about 30min - or more....
+
+
+######################################################################
+
+
+
+
+
+###az group delete --subscription 'NextBridge - IFRC'  -n acqplotterApp
+az group create --subscription 'NextBridge - IFRC' -l westeurope -n acqplotterApp
+
+az acr create --name acqplotterAppRegistry --resource-group acqplotterApp --sku standard --admin-enabled true --subscription 'NextBridge - IFRC'
+
+az acr build --registry acqplotterAppRegistry --resource-group acqplotterApp  --subscription 'NextBridge - IFRC' --image acqplotter-app .
+
+az appservice plan create -g acqplotterApp -n acqplotterAppServicePlan -l westeurope --is-linux --sku P3V2 --subscription 'NextBridge - IFRC'
+
+az webapp create -g acqplotterApp -p acqplotterAppServicePlan -n acqplotter-web-app -i acqplotterappregistry.azurecr.io/acqplotter-app:latest --subscription 'NextBridge - IFRC'
