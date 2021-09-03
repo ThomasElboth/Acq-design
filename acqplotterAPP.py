@@ -15,6 +15,7 @@ import plotly.graph_objects as go
 import acq_plots as pl
 import vib_directivity as v
 import make_dithers as md
+import make_sweeps as ms
 
 
 
@@ -23,7 +24,7 @@ def main():
     st.set_page_config(layout="wide")
     st.sidebar.image('Shearwater_logo400x85.png')
     st.sidebar.subheader('Marine seismic acquisition tools')
-    st.sidebar.subheader('Version 0.1.7 April 13 - 2021')
+    st.sidebar.subheader('Version 0.3 Sept 3 - 2021')
     st.sidebar.write('Shearwater reflection marine RnD tools.')
     st.sidebar.write('The code is continiously under development, with new features added all the time. There are bugs in this code!')
     st.sidebar.write('If you have questions, comments or features you would like to see/add, please contact telboth@shearwatergeo.com')
@@ -34,6 +35,8 @@ def main():
         v.plot_array_directivity()
     if(st.sidebar.checkbox('make_dithers', value=False, help='Tick this to go to a page that helps produce dithering sequences for blended acquisition.')):
         md.make_dithers()
+    if(st.sidebar.checkbox('make_sparse_sweeps', value=False, help='Tick this to go to a page that makes sparse sweeps - suitable for blended acq.')):
+        ms.make_sweeps()
 
 
     st.sidebar.write('Pick one of the above')

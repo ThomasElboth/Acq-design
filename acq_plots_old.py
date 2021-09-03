@@ -33,11 +33,9 @@ def get_valid_source_sep_alternatives(no_sources, streamer_sep):
             break
     source_separation.append(0)
     #Also add a number of no-god options for the 'stupid' user
-    for i in range(1,6):
-        source_separation.append(i*source_separation[0])
     for i in range(round(source_separation[0])+1, round(source_separation[1])-1):
         source_separation.append(i)
-    for i in range(10, 5*round(source_separation[0])-1):
+    for i in range(10, round(source_separation[0])-1):
         source_separation.append(i)
 
     return source_separation
@@ -547,6 +545,15 @@ def plot_layout_birdseye(streamer_sep, source_x,  source_y, streamer_x, streamer
         st.write("No streamers - so this does not work...")
         return fig
 
+    count=0
+    for i in range(0, no_sources):
+        for j in range(0, no_streamers):
+
+            cmp_x.append(0.5*(source_x[i]+streamer_x[j]))
+            cmp_x.append(0.5*(source_x[i]+streamer_x[j]))
+            cmp_y.append(0.5*(source_y[i]+streamer_y[0]))   #first point (source + front streamer /2)
+            cmp_y.append(0.5*(source_y[i]+streamer_y[-1]))   #last point  (source + back streamer) /2
+
     #make a color array - to see easily identify the different bins
     my_colors = ['red','green','blue','purple','cyan','black','orange']
     my_colors0 = []
@@ -556,54 +563,39 @@ def plot_layout_birdseye(streamer_sep, source_x,  source_y, streamer_x, streamer
 
     my_colors2 = ['rgba(255,0,0,0.3)', 'rgba(0,255,0,0.3)', 'rgba(0,0,255,0.3)', 'rgba(128,0,128,0.3)','rgba(0,255,255,0.3)', 'rgba(255,127,80,0.3)', 'rgba(0,0,0,0.3)' , 'rgba(255,0,0,0.3)', 'rgba(0,255,0,0.3)', 'rgba(0,0,255,0.3)', 'rgba(128,0,128,0.3)','rgba(0,255,255,0.3)', 'rgba(255,127,80,0.3)', 'rgba(0,0,0,0.3)']
     my_colors02 = []
-    while (len(my_colors02)<100):
+    while (len(my_colors02)<len(cmp_x)):
         my_colors02.append(my_colors2[0:no_sources])
     my_colors2 = [item for sublist in my_colors02 for item in sublist] #flatten the list
 
+   #-----------Getting the right cmp-wodth (at the edges)-------------------
+    my_dy = (cmp_x[2]-cmp_x[0])/2
+    if my_dy > 100: #one source case
+        my_dy = 0.5*streamer_sep
 
-    dy1 = (0.5*streamer_sep/no_hf_sources)*np.ones(no_streamers)
-    no_sources_on_source_vessel = len(source_x)-no_hf_sources
-    dy2=np.zeros(no_streamers)
-    if(no_sources_on_source_vessel>0):
-        dy2 = (0.5*streamer_sep/no_sources_on_source_vessel)*np.ones(no_streamers)
+    print("cmp_x:\t", cmp_x) #these are all sorted.... :-((()))
+    print("source_x:\t", source_x)
+    print("source_y:\t", source_y)
 
-    #now if we have an uneven streamer separation, the dy1 and dy2 will vary
-    # for j in range(0, no_streamers-1):
-    #     dy1[j] = round(0.5*(streamer_x[j+1]-streamer_x[j])/no_hf_sources)
-    #     if(no_sources_on_source_vessel>0):
-    #         dy2[j] = round(0.5*(streamer_x[j+1]-streamer_x[j])/no_sources_on_source_vessel)
+    for i in range(0, len(cmp_x)-1,2): #the cmp's (Need to go first due to the filling option)
 
-    for i in range(0, no_hf_sources):
-        for j in range(0, no_streamers):
-            cmp_x_beg = (0.5*(source_x[i]+streamer_x[j]))
-            cmp_y_beg = (0.5*(source_y[i]+streamer_y[0]))
-            cmp_y_end = (0.5*(source_y[i]+streamer_y[-1]))   #last point  (source + back streamer) /2
-            fig.add_shape(type="rect",
-                x0=cmp_x_beg-0.48*dy1[j],   y0=cmp_y_beg,
-                x1=cmp_x_beg+0.48*dy1[j],   y1=cmp_y_end,
-                line=dict(
-                    color=my_colors2[i],
-                    width=0.05,
+        if(i<len(cmp_x)-2):
+            my_dy = min(  (cmp_x[2]-cmp_x[0])/2, (cmp_x[i+2]-cmp_x[i])/2 )
+            if(my_dy<=0):  #hack to avoid zeros - which gave wrong colors
+                my_dy = abs((cmp_x[i]-cmp_x[i-2])/2)
+            if my_dy > 100:  #taking care of the one source case
+                my_dy = 0.5*streamer_sep
+        print(my_dy)
+
+        fig.add_shape(type="rect",
+            x0=cmp_x[i]-0.95*my_dy,   y0=cmp_y[i],   #problem here: when the CMP with varies - this gets all wrong
+            x1=cmp_x[i+1]+0.95*my_dy, y1=cmp_y[i+1], #need to draw the cmp's from the two vessels independently - to avoid the problems at the ""edge
+            line=dict(
+            #    color=my_colors[round(i/2)],
+                width=0.05,
                 ),
-                fillcolor=my_colors2[i],
-            )
-
-    for i in range(no_hf_sources, no_sources_on_source_vessel+no_hf_sources):
-        for j in range(0, no_streamers):
-            cmp_x_beg = (0.5*(source_x[i]+streamer_x[j]))
-            cmp_y_beg = (0.5*(source_y[i]+streamer_y[0]))
-            cmp_y_end = (0.5*(source_y[i]+streamer_y[-1]))   #last point  (source + back streamer) /2
-            fig.add_shape(type="rect",
-                x0=cmp_x_beg-0.48*dy2[j],   y0=cmp_y_beg,
-                x1=cmp_x_beg+0.48*dy2[j],   y1=cmp_y_end,
-                line=dict(
-                    color=my_colors2[i],
-                    width=0.05,
-                ),
-                fillcolor=my_colors2[i],
-            )
-
-
+            fillcolor=my_colors2[round(i/2)],
+            ##fillcolor=my_colors2[0],
+        )
 
     #the sources
     no_lf_sources=0
@@ -998,22 +990,18 @@ def acq_plots():
     st.title('Survey design assesment:')
     fig = go.Figure()
     fig1 = go.Figure()
-    my_expander1 = st.expander("Sources and streamers:", expanded=True)
+    my_expander1 = st.beta_expander("Sources and streamers:", expanded=True)
     no_source_vessels=1
     source_vessel_offset_crossline =0
     source_vessel_offset_inline=0.001
     no_hf_sources_on_vessel1 = 0
     with my_expander1:
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3, col4 = st.beta_columns(4)
 
         with col2:
             no_streamers = st.selectbox('Number of streamers' ,[12,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,20])
-            seps = [100, 40, 50, 60, 62.5, 66.66, 70, 75, 80, 83.33, 85, 87.5, 90, 95, 100, 102.5, 110, 112.5, 120, 125, 130, 140, 150, 200, 300, 400]
-            seps = np.asarray(seps, dtype=np.float32)
-            #additional_seps=np.linspace(25,250, 226)
-            #seps = [*seps, *additional_seps]
-            streamer_sep = st.selectbox('Select the streamer sep (m) or',seps)
-            txt="set streamer sep or add comma separated list of the "+str(no_streamers-1)+" str sep"
+            streamer_sep = st.selectbox('Set the streamer sep (m)',[100, 40, 50, 60, 62.5, 66.66, 70, 75, 80, 83.33, 85, 87.5, 90, 95, 100, 102.5, 110, 112.5, 120, 125, 130, 140, 150, 200, 300, 400])
+            txt="Or optional: Add a comma separated list of the "+str(no_streamers-1)+" streamer sep"
             uneven_streamer_sep = st.text_input(txt)
             streamer_sep2=np.zeros(no_streamers-1)
             if len(uneven_streamer_sep)>0:
@@ -1023,13 +1011,8 @@ def acq_plots():
                         streamer_sep2[i] = float(uneven_streamer_sep[i])
                         if ( (streamer_sep2[i] <0) or (streamer_sep2[i] >300)):
                             st.warning("One or more of streamer sep provided is below 0 or larger than 300m. Are you sure???")
-                elif len(uneven_streamer_sep)==1:
-                    for i in range(0, no_streamers-1):
-                        streamer_sep2[i]=float(uneven_streamer_sep[0])
-                    streamer_sep=streamer_sep2[0]
                 else:
-                   st.warning("The #streamer sep needs to be 1 or exactly == no_streamers-1. Leave this field blank to get the nominal streamer separation selected above!")
-
+                    st.warning("The #streamer sep needs to be exactly == no_streamers-1. Or just leave this field blank to get the nominal streamer separation selected above!")
 
             layback = st.selectbox('Source layback (m)',[150, 100, 75, 50, 0, -3000])
             place_lf_in_center = st.checkbox('Place the LF source(s) in the center with the HF or air-guns on the sides', value=False)
@@ -1052,10 +1035,6 @@ def acq_plots():
             plot_tot_layout = st.button("Plot inline HF+LF layout")
             plot_hf_birdseye = st.button("Plot birdseye HF+LF layout and HF offset classes")
             make_roseplot =  st.button("Make roseplots")
-
-            winx = st.text_input("Set plot width (m)", 500)
-            winy = st.text_input("Set plot height (m)", 700)
-
         with col4:
             extra_source_vessel_1 = st.checkbox('Tick off here for an extra source vessel', value=False)
             if extra_source_vessel_1:
@@ -1071,9 +1050,9 @@ def acq_plots():
                 source_vessel_source_sep = st.number_input('Source vessel source separation',default_source_sep, source_vessel_no_sources*default_source_sep, default_source_sep, default_source_sep )
 
 
-    my_expander0 = st.expander("Extra parameters (sources and streamers):", expanded=False)
+    my_expander0 = st.beta_expander("Extra parameters (sources and streamers):", expanded=False)
     with my_expander0:
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3 = st.beta_columns(3)
 
         with col2:
             offset_class_size = st.selectbox('Size of offset class (m)', [100, 50, 75, 100, 125, 150, 200, 250, 300])
@@ -1100,9 +1079,9 @@ def acq_plots():
             source_hf_y=np.append(source_hf_y, source_vx)
 
 
-    my_expander3 = st.expander("Node parameters:", expanded=False)
+    my_expander3 = st.beta_expander("Node parameters:", expanded=False)
     with my_expander3:
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3 = st.beta_columns(3)
 
         with col1:
             plot_node_layout = st.button("Plot the full node survey layout")
@@ -1173,7 +1152,7 @@ def acq_plots():
             [R, S_dipole] = get_source_and_rec_locations_nodes(survey_area_x, survey_area_y, node_dx, node_dy, source_hf_sep, spi,no_hf_sources, shooting_area_overlap, True, no_saillines)
             [fig, fig1] = plot_energy(no_hf_sources, source_hf_sep, spi, no_streamers, streamer_sep, streamer_sep2, streamer_len, layback, R, S, S_dipole, shooting_area_overlap, critical_reflection_angle )
 
-    my_expander2 = st.expander("Plots:", expanded=True)
+    my_expander2 = st.beta_expander("Plots:", expanded=True)
     with my_expander2:
 
         if (plot_hf_layout):
@@ -1214,11 +1193,10 @@ def acq_plots():
 
             else:
                 txt = ('Birdseye view (front end): '+str(no_streamers)+' str @'+str(streamer_sep)+'m. <br>'+str(round(no_hf_sources/no_source_vessels))+' <b>HF</b> src @'+str(round(source_hf_sep/no_source_vessels))+'m and '+str(no_lf_sources)+' LF src @'+str(round(source_lf_sep/no_source_vessels))+'m. Effective CMP-width is '+str(0.5*no_streamers*streamer_sep)+' m.')
-            fig.update_layout(title=txt, xaxis_title='Meter',yaxis_title='Meter', showlegend=False, width=int( winx ), height=int( winy ) )
+            fig.update_layout(title=txt, xaxis_title='Meter',yaxis_title='Meter', showlegend=False)
             if no_hf_sources>0 and no_streamers>0:
                 fig1 = plot_offset_classes(streamer_sep, source_hf_y, source_hf_x, streamer_y, streamer_x, offset_class_size, no_hf_sources_on_vessel1)
                 fig1.update_xaxes(range=[streamer_y[0]-50, streamer_y[-1]+50])
-                fig1.update_layout(width=int( winx ), height=int( winy ))
 
         if make_roseplot:
             mid_x = streamer_sep*(no_streamers-1)/2 #the center of the spread - right behind the boat

@@ -154,8 +154,10 @@ def plot_dithers(src_d, nLevels, dither_type):
             go.Scatter(x=np.linspace(0,no_dithers,no_dithers), y=src_d[0,:], mode='markers', marker_size=marker_size,marker_color=my_color[0]),
             row=1, col=1 )
         fig.add_trace(
-            go.Histogram(x=src_d[0,:], marker_color=my_color[0], nbins=20),
-            row=1, col=2 )
+            go.Histogram(x=src_d[0,:] ),
+            row=1, col=2)
+        fig.update_layout(height=600, width=800,  showlegend=False)
+        return fig
 
     elif (no_src>1 and nLevels==1):  #multi-source - easing off on the uniform randomness to avoid potential patent issue
         list_of_titles=[] #create all the sub-plot text
@@ -229,14 +231,14 @@ def get_params(): #the streamlit stuff
     st.title('Dither sequences for blended acquisition')
 
     #start by getting the input parameters from the user. TODO: add tooltip
-    my_expander1 = st.beta_expander("General parameters:", expanded=True)
+    my_expander1 = st.expander("General parameters:", expanded=True)
 
     with my_expander1:
-        col1, col2, col3 = st.beta_columns(3)
+        col1, col2, col3 = st.columns(3)
         with col1:
             no_src =        st.number_input('Number of souces to dither:',1,9,3,1,help="This is the number of sources operating in flip-flop-flap- mode.")
             nPoints =       st.number_input('The number of dithers per source:',10,2500,200,10, help='This is how many dithers you want for one source. Typically this number should be > no traces in the migration aperture.')
-            compute_dithers=st.button("Plot the dithers (for QC)", help='Produce nice looking QC plots of the dither sequences.')
+            compute_dithers=st.button("Plot the dithers (for QC), and prepare a file for downloading", help='Produce nice looking QC plots of the dither sequences.')
             get_help       =st.button("Get a ppt that explains the dithering",help="Download a ppt with a lot of explanation on why you want to use the inverse Irwin-Hall distribution.")
             if get_help: #return a ppt
                 # Load selected file
@@ -248,10 +250,12 @@ def get_params(): #the streamlit stuff
         with col2:
             range_beg= st.number_input('Dither minimum in ms:', -2000,2000, 0, 4)
             range_end= st.number_input('Dither maximum in ms:', -2000,2000, 500, 4)
-            dither_type=st.selectbox('Select type of dithers:',('Inverse Irwin-Hall','Random','Halton','Poisson'), help="The IHH (Invese Irwin-Hall) is the one your should select! The others are for RnD and as illustrations.")
+            dither_type=st.selectbox('Select type of dithers (remember that natural dithering adds to this):',('Inverse Irwin-Hall','Random','Halton','Poisson'), help="The IHH (Invese Irwin-Hall) is the one your should select! The others are for RnD and as illustrations.")
+            if dither_type=="Inverse Irwin-Hall":
+                st.warning('Contact Legal/IP/RnD before using invese Irwin-Hall dither on a survey!')
         with col3:
             nLevels = st.number_input('Number of levels (N+1 or N+2):',1,2,1,1, help="Keep this as 1 for all normal surveys. In a case where sources are going off very often, it might be advisable to also optimize the dithers for the N+2 shot. Pls contact RnD before using this on a real survey.")
-            nBacksteps = st.number_input('Amount of anti-clustering:',1,5,5,1,help="Keep this at 5 or less. [3-5] is a good and robust choice. If you use numbers much larger than 5, there is a potential issue with regards to a CGG patent in that the effective distribution becones close to uniform random. Please contact Legual/IP council and RnD before going above 5.")
+            nBacksteps = st.number_input('Amount of anti-clustering:',1,5,5,1,help="Keep this at 5 or less. [3-5] is a good and robust choice. If you use numbers much larger than 5, there is a potential issue with regards to a CGG patent in that the effective distribution becones close to uniform random. Please contact Legal/IP council and RnD before going above 5.")
             user_seed = int(st.text_input("User seed (for rand numb gen):", "0", help="Keeping this at 0 will give different results each time, However, by providing your own seed, for example 123, the same random sequence is produced every time."))
 
     if(user_seed!=0):
@@ -379,7 +383,19 @@ def make_dithers():
         for i in range(0,no_src):
             for j in range(0, nPoints):
                 if (src_d[i,j] % 2 !=0):
-                    src_d[i,j] = src_d[i,j] +1
+                    src_d[i,j] = round(src_d[i,j] +1)
+
+        #also make a 4ms and 8ms resolution
+        src_d4 = src_d
+        src_d8 = src_d
+        for i in range(0,no_src):
+            for j in range(0, nPoints):
+                if (src_d[i,j] % 4 !=0):
+                    src_d4[i,j] = round(src_d[i,j] +2.0)
+        for i in range(0,no_src):
+            for j in range(0, nPoints):
+                if (src_d4[i,j] % 8 !=0):
+                    src_d8[i,j] = round(src_d4[i,j] +4)
 
         fig=plot_dithers(src_d, nLevels, dither_type)
         if (len(fig.data)>0):
@@ -389,13 +405,26 @@ def make_dithers():
         df = pd.DataFrame(src_d.T)
         csv = df.to_csv(index=False)
         b64 = base64.b64encode(csv.encode()).decode()  # some strings <-> bytes conversions necessary here
-        href = f'<a href="data:file/csv;base64,{b64}">Download CSV File</a> (right-click and save as &lt;some_name&gt;.csv)'
+        href = f'<a href="data:file/csv;base64,{b64}">Download CSV File (at 2ms resolution)</a> (right-click and save as &lt;some_name&gt;.csv)'
         st.markdown(href, unsafe_allow_html=True)
 
-        st.write("The computed dither sequence:")
-        #st.write(src_d.T)
-        #st.dataframe(df.style.highlight_max(axis=0))
+        df4 = pd.DataFrame(src_d4.T)
+        csv4 = df4.to_csv(index=False)
+        b64 = base64.b64encode(csv4.encode()).decode()  # some strings <-> bytes conversions necessary here
+        href = f'<a href="data:file/csv;base64,{b64}">Download CSV File (at 4ms resolution)</a> (right-click and save as &lt;some_name&gt;.csv)'
+        st.markdown(href, unsafe_allow_html=True)
+
+        df8 = pd.DataFrame(src_d8.T)
+        csv8 = df8.to_csv(index=False)
+        b64 = base64.b64encode(csv8.encode()).decode()  # some strings <-> bytes conversions necessary here
+        href = f'<a href="data:file/csv;base64,{b64}">Download CSV File (at 8ms resolution)</a> (right-click and save as &lt;some_name&gt;.csv)'
+        st.markdown(href, unsafe_allow_html=True)
+
+
+        st.write("The computed dither sequence (at 2ms):")
         st.table(df)
+
+
 
 def main():
     print("Hello World!")

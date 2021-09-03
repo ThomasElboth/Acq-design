@@ -17,6 +17,7 @@ RUN cp dither_explained.pptx ~/dither_explained.pptx
 RUN cp acq_plots.py ~/acq_plots.py
 RUN cp vib_directivity.py ~/vib_directivity.py
 RUN cp make_dithers.py ~/make_dithers.py
+RUN cp make_sweeps.py ~/make_sweeps.py
 RUN cp Gun_Database/* ~/Gun_Database
 RUN cp Vib_Database/* ~/Vib_Database
 RUN cp config.toml ~/.streamlit/config.toml

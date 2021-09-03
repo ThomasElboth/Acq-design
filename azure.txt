@@ -3,30 +3,15 @@
 f09a2159743 :)
 
 
-"it seems like B2 is teh minimum for a streamlit app....."
-
-
-#CREATE A RESOURCE GROUP:
-#CREATE A CONTAINER REGISTRY UNDER THE RESOURCE GROUP
-#BUILD THE DOCKER IMAGE AND SAVE TO AZURE CONTAINER REGISTRY (THIS TAKES A FEW MIN)
+"it seems like B2 is the minimum for a streamlit app....."
 
 az login
 
+#to be run the first time only
 az group create -l westeurope -n acqplotterApp
 az acr create --name acqplotterAppRegistry --resource-group acqplotterApp --sku standard --admin-enabled true
+
+#to be run every time the code is updated/changed
 az acr build --registry acqplotterAppRegistry --resource-group acqplotterApp --image acqplotter-app .
 az appservice plan create -g acqplotterApp -n acqplotterAppServicePlan -l westeurope --is-linux --sku B2
 az webapp create -g acqplotterApp -p acqplotterAppServicePlan -n acqplotter-web-app -i acqplotterappregistry.azurecr.io/acqplotter-app:latest
-
-
-
-
-
-#And finally paste this into your browser
-
-#-->  acqplotter-web-app.azurewebsites.net
-
-#then wait for about 30min - or more....
-
-
-######################################################################

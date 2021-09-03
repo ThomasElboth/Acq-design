@@ -298,9 +298,9 @@ def plot3d_directivity_and_phase(signature, sampling_interval, inline_pos, cross
 def plot_array_directivity():
     st.title('Source/Vibrator array analysis ')
 
-    my_expander1 = st.beta_expander("General parameters:", expanded=True)
+    my_expander1 = st.expander("General parameters:", expanded=True)
     with my_expander1:
-        col1, col2, col3, col4, col5 = st.beta_columns(5)
+        col1, col2, col3, col4, col5 = st.columns(5)
         with col1:
             no_of_vibs = st.number_input('Number of vibrators in one array:',1,9,1,1)
         with col4:
@@ -322,9 +322,9 @@ def plot_array_directivity():
         signature=[]
         sampling_interval=[]
 
-    my_expander2 = st.beta_expander("The individual source elements:", expanded=True)
+    my_expander2 = st.expander("The individual source elements:", expanded=True)
     with my_expander2:
-        col1, col2, col3, col4, col5 = st.beta_columns(5)
+        col1, col2, col3, col4, col5 = st.columns(5)
         key_count=0
 
         try:
@@ -467,9 +467,9 @@ def plot_array_directivity():
             signature = np.asarray(signature, dtype=np.float32)
             #print("Signature.shape=", signature.shape)
 
-    my_expander3 = st.beta_expander("Plot source layout:", expanded=False)
+    my_expander3 = st.expander("Plot source layout:", expanded=False)
     with my_expander3:
-        col1, col2, col3 = st.beta_columns(3)
+        col1, col2, col3 = st.columns(3)
         with col1:
             fig = go.Figure()
             fig.add_trace(go.Scatter(x=inline_pos[0:no_of_vibs], y=crossline_pos[0:no_of_vibs], mode='markers',  marker_size=12, marker_symbol='star'))
@@ -486,9 +486,9 @@ def plot_array_directivity():
             fig.update_layout(title='Source layout (crossline-depth)',  xaxis_title='Crossline (m)',yaxis_title='Depth (m)')
             st.plotly_chart(fig)
 
-    my_expander4 = st.beta_expander("Plot individual element signatures:", expanded=False)
+    my_expander4 = st.expander("Plot individual element signatures:", expanded=False)
     with my_expander4:
-        col1, col2 = st.beta_columns(2)
+        col1, col2 = st.columns(2)
         with col1:
             #plot the t-x signatures of the individual sources - just to to get started
             fig = go.Figure()
@@ -578,11 +578,11 @@ def plot_array_directivity():
                         fig.update_layout(xaxis_title = 'Time (sec)', yaxis_title='Frequency (Hz)', title=txt)
                         st.plotly_chart(fig)
 
-    my_expander5 = st.beta_expander("Directivity plots:", expanded=True)
+    my_expander5 = st.expander("Directivity plots:", expanded=True)
 
     delay=[]
     if len(sampling_interval)==no_of_vibs:
-        col1, col2, col3 = st.beta_columns(3)
+        col1, col2, col3 = st.columns(3)
         with col1:
             plot_2d = st.button("Plot source directivity")
             if (plot_2d):
